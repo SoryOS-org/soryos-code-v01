@@ -10,7 +10,7 @@ const base = {
     package: 'com.yourcompany.vibracode', // Replace with your bundle ID
   },
   updates: {
-    url: 'https://u.expo.dev/070e1bbb-2af9-4799-8f8d-9abc0cb4fa09',
+    url: 'https://u.expo.dev/b733e6a0-be68-4bec-b0d0-9debc364dc7d',
   },
   runtimeVersion: '54.0.0',
 };
@@ -20,10 +20,10 @@ const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
     ...base,
     slug: 'vibra-code-versioned-add-sdk',
     name: 'Vibra Code (versioned) + add sdk',
-    owner: 'your-expo-username', // Replace with your Expo account username
+    owner: 'soryos-621s-org',
     extra: {
       eas: {
-        projectId: '070e1bbb-2af9-4799-8f8d-9abc0cb4fa09',
+        projectId: 'b733e6a0-be68-4bec-b0d0-9debc364dc7d',
       },
     },
   },
@@ -31,10 +31,10 @@ const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
     ...base,
     slug: 'vibra-code',
     name: 'Vibra Code (versioned)',
-    owner: 'your-expo-username', // Replace with your Expo account username
+    owner: 'soryos-621s-org',
     extra: {
       eas: {
-        projectId: '070e1bbb-2af9-4799-8f8d-9abc0cb4fa09',
+        projectId: 'b733e6a0-be68-4bec-b0d0-9debc364dc7d',
       },
     },
   },
@@ -42,10 +42,10 @@ const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
     ...base,
     slug: 'vibra-code',
     name: 'Vibra Code (unversioned)',
-    owner: 'your-expo-username', // Replace with your Expo account username
+    owner: 'soryos-621s-org',
     extra: {
       eas: {
-        projectId: '070e1bbb-2af9-4799-8f8d-9abc0cb4fa09',
+        projectId: 'b733e6a0-be68-4bec-b0d0-9debc364dc7d',
       },
     },
   },
@@ -53,10 +53,10 @@ const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
     ...base,
     slug: 'vibra-code',
     name: 'Vibra Code',
-    owner: 'your-expo-username', // Replace with your Expo account username
+    owner: 'soryos-621s-org',
     extra: {
       eas: {
-        projectId: '070e1bbb-2af9-4799-8f8d-9abc0cb4fa09',
+        projectId: 'b733e6a0-be68-4bec-b0d0-9debc364dc7d',
       },
     },
   },
@@ -64,10 +64,21 @@ const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
     ...base,
     slug: 'vibra-code',
     name: 'Vibra Code',
-    owner: 'your-expo-username', // Replace with your Expo account username
+    owner: 'soryos-621s-org',
     extra: {
       eas: {
-        projectId: '070e1bbb-2af9-4799-8f8d-9abc0cb4fa09',
+        projectId: 'b733e6a0-be68-4bec-b0d0-9debc364dc7d',
+      },
+    },
+  },
+  production: {
+    ...base,
+    slug: 'vibra-code',
+    name: 'Vibra Code',
+    owner: 'soryos-621s-org',
+    extra: {
+      eas: {
+        projectId: 'b733e6a0-be68-4bec-b0d0-9debc364dc7d',
       },
     },
   },
