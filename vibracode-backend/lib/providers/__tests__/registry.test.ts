@@ -118,12 +118,12 @@ test("registry: getProviderCatalog exposes metadata and configured flags, no sec
   const ids = configured.flatMap((p) => p.models.map((m) => m.id));
   assert.ok(ids.includes("openrouter/free"));
   assert.ok(ids.includes("mistral-large-latest"));
-  assert.ok(ids.includes("gemini-2.5-flash"));
+  assert.ok(ids.includes("gemini-3.5-flash-lite"));
 });
 
 test("registry: allModelIds unions every catalogue", () => {
   const ids = allModelIds();
   assert.ok(ids.includes("openrouter/free"));
   assert.ok(ids.includes("mistral-large-latest"));
-  assert.ok(ids.includes("gemini-2.5-flash"));
+  assert.ok(ids.includes("gemini-3.5-flash-lite"));
 });

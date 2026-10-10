@@ -16,18 +16,18 @@ async function withEnv(name: string, value: string | undefined, fn: () => Promis
   }
 }
 
-test("openrouter: defaults to the free router when no env override is set", async () => {
+test("openrouter: defaults to north-mini-code when no env override is set", async () => {
   await withEnv("OPENROUTER_DEFAULT_MODEL", "", async () => {
     const provider = new OpenRouterProvider({ apiKey: "k" });
-    assert.equal(provider.defaultModel, "openrouter/free");
+    assert.equal(provider.defaultModel, "cohere/north-mini-code:free");
     assert.equal(provider.isConfigured(), true);
   });
 });
 
 test("openrouter: honours OPENROUTER_DEFAULT_MODEL environment override", async () => {
-  await withEnv("OPENROUTER_DEFAULT_MODEL", "deepseek/deepseek-chat-v3.1:free", async () => {
+  await withEnv("OPENROUTER_DEFAULT_MODEL", "thinkingmachines/inkling:free", async () => {
     const provider = new OpenRouterProvider({ apiKey: "k" });
-    assert.equal(provider.defaultModel, "deepseek/deepseek-chat-v3.1:free");
+    assert.equal(provider.defaultModel, "thinkingmachines/inkling:free");
   });
 });
 
@@ -40,7 +40,7 @@ test("openrouter: curated catalogue is non-empty and includes the free router", 
 test("openrouter: getCapabilities is unknown for the free router (verified at runtime)", () => {
   const provider = new OpenRouterProvider({ apiKey: "k" });
   assert.equal(provider.getCapabilities("openrouter/free").toolCalling, "unknown");
-  assert.equal(provider.getCapabilities("qwen/qwen3-coder:free").toolCalling, true);
+  assert.equal(provider.getCapabilities("cohere/north-mini-code:free").toolCalling, true);
 });
 
 test("openrouter: not configured without an API key", () => {

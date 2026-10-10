@@ -2,6 +2,8 @@ import { inngest } from "../client";
 import { updateSessionStatus, addMessage } from "../middleware";
 import { Template } from "@/config";
 import { Id } from "@/convex/_generated/dataModel";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "@/convex/_generated/api";
 import { runProviderAgent } from "@/lib/providers/engine";
 
 /**
@@ -61,17 +63,27 @@ export const runAgentProvider = inngest.createFunction(
   },
   { event: "vibracode/run.agent.provider" },
   async ({ event, step }) => {
-    const { sessionId, id, message, template, model, sandboxId } = event.data as {
+    const { sessionId, id, message, template, model, sandboxId, clerkId } = event.data as {
       sessionId: string;
       id: Id<"sessions">;
       message: string;
       template?: Template;
       model?: string;
       sandboxId: string;
+      clerkId?: string;
     };
 
     await step.run("run provider agent", async () => {
-      await runProviderAgent({ id, sandboxId, message, template, model });
+      // Prefer per-user API keys saved in Provider Settings; fall back to env vars.
+      let secrets: { openrouter?: string; mistral?: string; gemini?: string } | undefined;
+      if (clerkId) {
+        try {
+          secrets = await fetchQuery(api.providerSettings.getProviderSecretsInternal, { clerkId });
+        } catch (error) {
+          console.warn(`⚠️ Could not load provider secrets for ${clerkId}:`, error);
+        }
+      }
+      await runProviderAgent({ id, sandboxId, message, template, model, secrets });
     });
   }
 );

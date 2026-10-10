@@ -18,10 +18,10 @@ async function withEnv(name: string, value: string | undefined, fn: () => Promis
   }
 }
 
-test("gemini: defaults to gemini-2.5-flash and is unconfigured without a key", async () => {
+test("gemini: defaults to gemini-3.5-flash-lite and is unconfigured without a key", async () => {
   await withEnv("GEMINI_DEFAULT_MODEL", "", async () => {
     const provider = new GeminiProvider({ apiKey: "k" });
-    assert.equal(provider.defaultModel, "gemini-2.5-flash");
+    assert.equal(provider.defaultModel, "gemini-3.5-flash-lite");
     assert.equal(provider.isConfigured(), true);
     assert.equal(new GeminiProvider({}).isConfigured(), false);
   });
@@ -156,5 +156,5 @@ test("gemini: 403 maps to a forbidden ProviderError with the real message", asyn
 
 test("gemini: getCapabilities reflects the catalogue", () => {
   const provider = new GeminiProvider({ apiKey: "k" });
-  assert.equal(provider.getCapabilities("gemini-2.5-flash").toolCalling, true);
+  assert.equal(provider.getCapabilities("gemini-3.5-flash-lite").toolCalling, true);
 });

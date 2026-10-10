@@ -16,11 +16,17 @@ import { api } from "@/convex/_generated/api";
 import { getSystemPrompt } from "@/lib/prompts";
 import { E2BManager } from "@/lib/e2b/config";
 import { Template } from "@/config";
-import { AIProvider, ChatMessage } from "./types";
+import { AIProvider, ChatMessage, ProviderId } from "./types";
 import { AgentEvent, runAgentLoop } from "./agent-loop";
 import { E2BToolExecutor, SandboxLike } from "./tool-executor";
 import { getProviderForModel } from "./registry";
 import { ProviderError, isProviderError } from "./errors";
+
+export interface ProviderSecrets {
+  openrouter?: string;
+  mistral?: string;
+  gemini?: string;
+}
 
 export interface RunProviderAgentInput {
   id: Id<"sessions">;
@@ -28,6 +34,12 @@ export interface RunProviderAgentInput {
   message: string;
   template?: Template;
   model?: string;
+  /**
+   * Optional per-user API keys read from `convex/providerSettings.ts`.
+   * When a provider has no user key here, its adapter falls back to the
+   * deployment env vars (OPENROUTER_API_KEY / MISTRAL_API_KEY / GEMINI_API_KEY).
+   */
+  secrets?: ProviderSecrets;
 }
 
 // Per-provider pricing used only to *estimate* user credit consumption.
@@ -105,7 +117,7 @@ export async function runProviderAgent(input: RunProviderAgentInput): Promise<{
   await fetchMutation(api.sessions.update, { id, agentStopped: false });
 
   // 2. Resolve provider + connect the sandbox (provider-agnostic).
-  const providers = await getProviders();
+  const providers = await getProviders(input.secrets);
   const { provider, model: resolvedModel } = getProviderForModel(model, providers);
   console.log(`[engine] provider=${provider.id} model=${resolvedModel || provider.defaultModel}`);
 
@@ -253,9 +265,13 @@ export async function runProviderAgent(input: RunProviderAgentInput): Promise<{
 
 // ---- helpers -------------------------------------------------------------------
 
-async function getProviders(): Promise<Record<string, AIProvider>> {
-  const { createProviders } = await import("./registry");
-  return createProviders({});
+async function getProviders(secrets: ProviderSecrets = {}): Promise<Record<ProviderId, AIProvider>> {
+  const { createProvider } = await import("./registry");
+  return {
+    openrouter: createProvider("openrouter", { apiKey: secrets.openrouter }),
+    mistral: createProvider("mistral", { apiKey: secrets.mistral }),
+    gemini: createProvider("gemini", { apiKey: secrets.gemini }),
+  };
 }
 
 async function getSessionData(id: Id<"sessions">): Promise<SessionLike | null> {

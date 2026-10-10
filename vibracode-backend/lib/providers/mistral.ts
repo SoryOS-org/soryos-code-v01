@@ -1,7 +1,7 @@
 /**
  * Mistral AI provider — official Mistral API (OpenAI-compatible chat endpoint).
  *
- * The model is selectable; the default is `mistral-large-latest`. Tool calling
+ * The model is selectable; the default is `codestral-latest`. Tool calling
  * is supported by the `*-latest` family and the Devstral coding models.
  */
 
@@ -31,7 +31,7 @@ export class MistralProvider extends OpenAICompatibleProvider {
     super({
       id: "mistral",
       label: "Mistral AI",
-      defaultModel: getEnv("MISTRAL_DEFAULT_MODEL") || "mistral-large-latest",
+      defaultModel: getEnv("MISTRAL_DEFAULT_MODEL") || "codestral-latest",
       defaultBaseUrl: config.baseUrl || getEnv("MISTRAL_BASE_URL") || MISTRAL_BASE_URL,
       apiKey: config.apiKey ?? getEnv("MISTRAL_API_KEY"),
       models: MISTRAL_MODELS,

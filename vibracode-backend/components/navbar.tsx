@@ -167,6 +167,7 @@ export default function Navbar() {
   const navLinksData = [
     { label: 'Home', href: '/' },
     { label: 'Sessions', href: '/sessions' },
+    { label: 'Settings', href: '/settings' },
     { label: 'Billing', href: '/billing' },
   ];
 

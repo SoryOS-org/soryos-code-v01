@@ -430,4 +430,17 @@ export default defineSchema({
     .index('by_clerkId', ['clerkId'])
     .index('by_status', ['status'])
     .index('by_createdAt', ['createdAt']),
+
+  // Provider API keys (per user, optional). Stored encrypted at rest by Convex;
+  // plaintext is only read server-side (lib/providers/engine.ts) and is never
+  // returned to the client — the web UI only ever sees masked values. When a
+  // user has no row (or an empty field), the server falls back to env vars.
+  providerSettings: defineTable({
+    clerkId: v.string(), // Clerk user id
+    openrouterApiKey: v.optional(v.string()),
+    mistralApiKey: v.optional(v.string()),
+    geminiApiKey: v.optional(v.string()),
+    updatedAt: v.number(), // Last time the keys were changed
+  })
+    .index('by_clerkId', ['clerkId']),
 });

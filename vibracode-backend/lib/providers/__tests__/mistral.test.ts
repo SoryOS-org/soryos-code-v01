@@ -16,10 +16,10 @@ async function withEnv(name: string, value: string | undefined, fn: () => Promis
   }
 }
 
-test("mistral: defaults to mistral-large-latest and official base URL", async () => {
+test("mistral: defaults to codestral-latest and official base URL", async () => {
   await withEnv("MISTRAL_DEFAULT_MODEL", "", async () => {
     const provider = new MistralProvider({ apiKey: "k" });
-    assert.equal(provider.defaultModel, "mistral-large-latest");
+    assert.equal(provider.defaultModel, "codestral-latest");
     assert.equal(provider.isConfigured(), true);
   });
 });

@@ -12,9 +12,9 @@ cannot compile the iOS app.
 The engine no longer requires a CLI inside the E2B sandbox
 (`vibracode-backend/lib/providers/`, default `AGENT_ENGINE=provider`):
 
-- **OpenRouter** free models → default `openrouter/free`
-- **Mistral AI** official API → default `mistral-large-latest`
-- **Google Gemini** official API → default `gemini-2.5-flash`
+- **OpenRouter** free models → default `cohere/north-mini-code:free`
+- **Mistral AI** official API → default `codestral-latest`
+- **Google Gemini** official API → default `gemini-3.5-flash-lite`
 
 The iOS app only stores a model id in `NSUserDefaults` under the legacy key
 `SelectedClaudeModel` and sends it to the backend. **Nothing on the iOS side

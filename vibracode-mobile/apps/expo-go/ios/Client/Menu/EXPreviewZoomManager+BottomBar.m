@@ -221,6 +221,7 @@ static NSArray<NSDictionary *> *OpenRouterFreeModelList(void) {
     @{@"id" : @"thinkingmachines/inkling:free", @"name" : @"Inkling"},
     @{@"id" : @"thinkingmachines/inkling-small:free", @"name" : @"Inkling Small"},
     @{@"id" : @"nvidia/nemotron-3-super-120b-a12b:free", @"name" : @"Nemotron 3 Super"},
+    @{@"id" : @"nvidia/nemotron-3-ultra-550b-a55b:free", @"name" : @"Nemotron 3 Ultra"},
     @{@"id" : @"nvidia/nemotron-3.5-lightning:free", @"name" : @"Nemotron 3.5 Lightning"},
     @{@"id" : @"nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
       @"name" : @"Nemotron 3 Nano Omni"},
@@ -244,6 +245,8 @@ static NSArray<NSDictionary *> *GeminiModelList(void) {
     @{@"id" : @"gemini-3.5-flash-lite", @"name" : @"Gemini 3.5 Flash-Lite"},
     @{@"id" : @"gemini-3.1-flash-lite", @"name" : @"Gemini 3.1 Flash-Lite"},
     @{@"id" : @"gemini-3-flash-preview", @"name" : @"Gemini 3 Flash Preview"},
+    @{@"id" : @"gemini-flash-latest", @"name" : @"Gemini Flash (latest)"},
+    @{@"id" : @"gemini-flash-lite-latest", @"name" : @"Gemini Flash-Lite (latest)"},
   ];
 }
 

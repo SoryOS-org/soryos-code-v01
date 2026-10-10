@@ -25,14 +25,22 @@ import { extractErrorMessage, parseSSE, safeJsonParse, safeText } from "./http";
 
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
+/**
+ * Gemini text/agent models available on the current Google AI Studio tier
+ * (verified live). The 2.0 family was shut down and the 2.5 family is no longer
+ * served to new users, so 3.x is the oldest usable family. Pro models and image
+ * models are paid-only and excluded. Keep in sync with `lib/models.ts`.
+ */
 export const GEMINI_MODELS: ModelInfo[] = [
-  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", description: "Best price/performance for agents", toolCalling: true, contextLength: 1048576 },
-  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", description: "Most capable reasoning", toolCalling: true, contextLength: 1048576 },
-  { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash-Lite", description: "Lowest latency and cost", toolCalling: true, contextLength: 1048576 },
-  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", description: "Fast, widely available", toolCalling: true, contextLength: 1048576 },
-  { id: "gemini-2.0-flash-lite", name: "Gemini 2.0 Flash-Lite", description: "Compact and fast", toolCalling: true, contextLength: 1048576 },
-  { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", description: "Stable older model", toolCalling: true, contextLength: 1048576 },
-  { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", description: "Stable older pro model", toolCalling: true, contextLength: 2097152 },
+  { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", description: "Newest Flash, best for agents", toolCalling: true, contextLength: 1048576 },
+  { id: "gemini-3.7-flash", name: "Gemini 3.7 Flash", description: "Strong coding and agentic workflows", toolCalling: true, contextLength: 1048576 },
+  { id: "gemini-3.6-flash", name: "Gemini 3.6 Flash", description: "Token efficient, stable", toolCalling: true, contextLength: 1048576 },
+  { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", description: "Frontier performance, stable", toolCalling: true, contextLength: 1048576 },
+  { id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash-Lite", description: "Low latency, high free quota", toolCalling: true, contextLength: 1048576 },
+  { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite", description: "Cheap and fast, high free quota", toolCalling: true, contextLength: 1048576 },
+  { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", description: "First Gemini 3 Flash", toolCalling: true, contextLength: 1048576 },
+  { id: "gemini-flash-latest", name: "Gemini Flash (latest)", description: "Alias that tracks the newest Flash", toolCalling: true, contextLength: 1048576 },
+  { id: "gemini-flash-lite-latest", name: "Gemini Flash-Lite (latest)", description: "Alias that tracks the newest Flash-Lite", toolCalling: true, contextLength: 1048576 },
 ];
 
 // ---- Wire-format types ----------------------------------------------------------
@@ -216,7 +224,7 @@ export class GeminiProvider implements AIProvider {
   private readonly models: ModelInfo[];
 
   constructor(config: ProviderConfig = {}) {
-    this.defaultModel = getEnv("GEMINI_DEFAULT_MODEL") || "gemini-2.5-flash";
+    this.defaultModel = getEnv("GEMINI_DEFAULT_MODEL") || "gemini-3.5-flash-lite";
     this.baseUrl = (config.baseUrl || getEnv("GEMINI_BASE_URL") || GEMINI_BASE_URL).replace(/\/+$/, "");
     this.apiKey = config.apiKey ?? getEnv("GEMINI_API_KEY");
     this.fetchImpl = config.fetchImpl ?? globalThis.fetch;

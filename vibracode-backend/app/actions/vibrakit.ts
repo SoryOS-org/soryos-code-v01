@@ -95,6 +95,7 @@ export async function runAgentAction({
         repository,
         model,
         sandboxId,
+        clerkId,
       },
     });
   } else {

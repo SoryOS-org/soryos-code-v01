@@ -32,6 +32,7 @@ export const OPENROUTER_FREE_MODELS: ModelOption[] = [
   { id: "thinkingmachines/inkling:free", name: "Inkling", description: "Frontier model, 1M context", tools: true },
   { id: "thinkingmachines/inkling-small:free", name: "Inkling Small", description: "Fast, 1M context", tools: true },
   { id: "nvidia/nemotron-3-super-120b-a12b:free", name: "Nemotron 3 Super", description: "120B, strong reasoning", tools: true },
+  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", name: "Nemotron 3 Ultra", description: "550B MoE, 1M context", tools: true },
   { id: "nvidia/nemotron-3.5-lightning:free", name: "Nemotron 3.5 Lightning", description: "Fast and lightweight", tools: true },
   { id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", name: "Nemotron 3 Nano Omni", description: "30B reasoning, multimodal", tools: true },
   { id: "poolside/laguna-s-2.1:free", name: "Laguna S 2.1", description: "Software engineering model", tools: true },
@@ -57,6 +58,8 @@ export const GEMINI_MODELS: ModelOption[] = [
   { id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash-Lite", description: "Low latency, high free quota", tools: true },
   { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite", description: "Cheap and fast, high free quota", tools: true },
   { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", description: "First Gemini 3 Flash", tools: true },
+  { id: "gemini-flash-latest", name: "Gemini Flash (latest)", description: "Alias tracking the newest Flash", tools: true },
+  { id: "gemini-flash-lite-latest", name: "Gemini Flash-Lite (latest)", description: "Alias tracking the newest Flash-Lite", tools: true },
 ];
 
 /**
@@ -135,7 +138,7 @@ export function resolveModel(model?: string | null, agentType?: AgentType): stri
   if (LEGACY_MODEL_ALIASES[id]) return LEGACY_MODEL_ALIASES[id];
   // Only ids that are still listed in the catalogs can be executed - anything
   // else (retired endpoint, paid id, typo) falls back to the safe default.
-  if (isMistralModel(id)) return MISTRAL_MODELS.some(entry => entry.id === id) ? id : "mistral-large-latest";
+  if (isMistralModel(id)) return MISTRAL_MODELS.some(entry => entry.id === id) ? id : "codestral-latest";
   if (isGeminiModel(id)) return GEMINI_MODELS.some(entry => entry.id === id) ? id : DEFAULT_GEMINI_MODEL;
   if (isOpenRouterModel(id)) return OPENROUTER_FREE_MODELS.some(entry => entry.id === id) ? id : DEFAULT_OPENROUTER_MODEL;
   if (isLegacyClaudeModel(id)) return DEFAULT_OPENROUTER_MODEL;

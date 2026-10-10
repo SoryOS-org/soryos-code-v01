@@ -26,6 +26,7 @@ import type * as images from "../images.js";
 import type * as messages from "../messages.js";
 import type * as migrations from "../migrations.js";
 import type * as paymentTransactions from "../paymentTransactions.js";
+import type * as providerSettings from "../providerSettings.js";
 import type * as pushNotifications from "../pushNotifications.js";
 import type * as revenuecat from "../revenuecat.js";
 import type * as sandbox from "../sandbox.js";
@@ -57,6 +58,7 @@ declare const fullApi: ApiFromModules<{
   messages: typeof messages;
   migrations: typeof migrations;
   paymentTransactions: typeof paymentTransactions;
+  providerSettings: typeof providerSettings;
   pushNotifications: typeof pushNotifications;
   revenuecat: typeof revenuecat;
   sandbox: typeof sandbox;

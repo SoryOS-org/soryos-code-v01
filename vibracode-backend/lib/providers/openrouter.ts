@@ -18,8 +18,9 @@ export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 /**
  * Curated catalogue of OpenRouter models with a working `:free` variant plus the
- * special `openrouter/free` router. `toolCalling` reflects the documented
- * capability; `"unknown"` means we verify at call time.
+ * special `openrouter/free` router (queried live 2026-10-10). `toolCalling`
+ * reflects the documented capability; `"unknown"` means we verify at call time.
+ * Keep in sync with `OPENROUTER_FREE_MODELS` in `lib/models.ts`.
  */
 export const OPENROUTER_MODELS: ModelInfo[] = [
   {
@@ -28,19 +29,27 @@ export const OPENROUTER_MODELS: ModelInfo[] = [
     description: "Routes to OpenRouter's free model pool. Tool support verified at runtime.",
     toolCalling: "unknown",
   },
-  { id: "deepseek/deepseek-chat-v3.1:free", name: "DeepSeek V3.1", description: "Strong coding, free tier", toolCalling: true },
-  { id: "qwen/qwen3-coder:free", name: "Qwen3 Coder", description: "Agentic coding model, free", toolCalling: true },
-  { id: "meta-llama/llama-3.3-70b-instruct:free", name: "Llama 3.3 70B", description: "General purpose, free", toolCalling: true },
-  { id: "mistralai/mistral-small-3.2-24b-instruct:free", name: "Mistral Small 3.2", description: "Fast instruction model, free", toolCalling: true },
-  { id: "google/gemma-3-27b-it:free", name: "Gemma 3 27B", description: "Google open model, free", toolCalling: true },
-  { id: "nvidia/nemotron-nano-9b-v2:free", name: "Nemotron Nano 9B", description: "Lightweight, free", toolCalling: true },
+  { id: "cohere/north-mini-code:free", name: "North Mini Code", description: "Coding model, 256k context", toolCalling: true },
+  { id: "thinkingmachines/inkling:free", name: "Inkling", description: "Frontier model, 1M context", toolCalling: true },
+  { id: "thinkingmachines/inkling-small:free", name: "Inkling Small", description: "Fast, 1M context", toolCalling: true },
+  { id: "nvidia/nemotron-3-super-120b-a12b:free", name: "Nemotron 3 Super", description: "120B, strong reasoning", toolCalling: true },
+  { id: "nvidia/nemotron-3.5-lightning:free", name: "Nemotron 3.5 Lightning", description: "Fast and lightweight", toolCalling: true },
+  { id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", name: "Nemotron 3 Nano Omni", description: "30B reasoning, multimodal", toolCalling: true },
+  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", name: "Nemotron 3 Ultra", description: "550B MoE, 1M context", toolCalling: true },
+  { id: "poolside/laguna-s-2.1:free", name: "Laguna S 2.1", description: "Software engineering model", toolCalling: true },
+  { id: "poolside/laguna-xs-2.1:free", name: "Laguna XS 2.1", description: "Small software engineering model", toolCalling: true },
+  { id: "google/gemma-4-31b-it:free", name: "Gemma 4 31B", description: "Google open model, 262k context", toolCalling: true },
+  { id: "google/gemma-4-26b-a4b-it:free", name: "Gemma 4 26B", description: "Google open model, efficient MoE", toolCalling: true },
+  { id: "apodex/apodex-1.1-mini:free", name: "Apodex 1.1 Mini", description: "Compact general model", toolCalling: true },
+  { id: "dots-studio/dots-3-note-preview:free", name: "Dots 3 Note", description: "Multimodal preview model", toolCalling: true },
+  { id: "liquid/lfm-2.5-2.6b:free", name: "LFM 2.5 2.6B", description: "Ultra-small on-device model", toolCalling: true },
 ];
 
 /**
- * Free models that historically do not support tool calling. Kept explicit so we
- * can refuse early instead of emitting a broken agent loop.
+ * Free models that do not support tool calling. Kept explicit so we can refuse
+ * early instead of emitting a broken agent loop.
  */
-const NON_TOOL_MODELS = new Set<string>();
+const NON_TOOL_MODELS = new Set<string>(["nvidia/nemotron-3.5-content-safety:free"]);
 
 function getEnv(name: string): string | undefined {
   const value = process.env[name];
@@ -52,7 +61,7 @@ export class OpenRouterProvider extends OpenAICompatibleProvider {
     super({
       id: "openrouter",
       label: "OpenRouter",
-      defaultModel: getEnv("OPENROUTER_DEFAULT_MODEL") || "openrouter/free",
+      defaultModel: getEnv("OPENROUTER_DEFAULT_MODEL") || "cohere/north-mini-code:free",
       defaultBaseUrl: config.baseUrl || getEnv("OPENROUTER_BASE_URL") || OPENROUTER_BASE_URL,
       apiKey: config.apiKey ?? getEnv("OPENROUTER_API_KEY"),
       models: OPENROUTER_MODELS,
