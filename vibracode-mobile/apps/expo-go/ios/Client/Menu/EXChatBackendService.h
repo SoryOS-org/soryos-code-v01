@@ -120,7 +120,7 @@ typedef void (^EXChatBackendStorageUrlCallback)(NSURL * _Nullable url, NSError *
  * @param convexSessionId The Convex session ID
  * @param message The user message
  * @param repository Optional repository name
- * @param model Optional Claude model identifier (e.g., "claude-sonnet-4-5")
+ * @param model Optional agent model identifier (e.g., "cohere/north-mini-code:free" or "gemini-3.5-flash")
  * @param completion Callback with error if any
  */
 - (void)triggerAIResponseWithSessionId:(NSString *)sessionId

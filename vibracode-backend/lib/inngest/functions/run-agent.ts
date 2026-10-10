@@ -4,6 +4,7 @@ import { Template } from "@/config";
 import { Id } from "@/convex/_generated/dataModel";
 import { getSystemPrompt } from "@/lib/prompts";
 import { E2BManager } from "@/lib/e2b/config";
+import { resolveAgentType, resolveModel, DEFAULT_AGENT_MODEL } from "@/lib/models";
 
 export const runAgent = inngest.createFunction(
   {
@@ -535,13 +536,16 @@ export const runAgent = inngest.createFunction(
       // Get the session creator's billing status to determine agent type
       const clerkId = sessionData?.createdBy || 'unknown';
       const billingStatus = await fetchQuery(api.billingSwitch.getBillingStatus, { clerkId });
-      const agentType = billingStatus?.agentType || 'claude';
-      console.log(`🤖 Agent Type (from globalConfig): ${agentType}`);
+      // The selected model decides which agent runs it: OpenRouter free models go
+      // to the Claude Code agent, `gemini-*` models to the Gemini agent.
+      const agentType = resolveAgentType(model, billingStatus?.agentType);
+      const billingMode = agentType === 'cursor' ? 'tokens' : 'credits';
+      console.log(`🤖 Agent Type: ${agentType} (model: ${model || 'default'}) | Billing Mode: ${billingMode}`);
 
       // PRE-FLIGHT BILLING CHECK: Ensure user has enough credits/tokens before running agent
       const MIN_CREDITS_REQUIRED = 0.10; // User-configured minimum
 
-      if (billingStatus?.billingMode === 'credits') {
+      if (billingMode === 'credits') {
         // Credit mode check
         const creditsRemaining = billingStatus?.creditsRemaining || 0;
         // Credit cost is 4x real cost, so $0.10 min credits allows ~$0.025 API cost
@@ -610,7 +614,7 @@ export const runAgent = inngest.createFunction(
       if (agentType === 'claude') {
         console.log('🤖 EXECUTING CLAUDE COMMAND...');
         console.log(`📊 isFirstMessage: ${isFirstMessage} (${isFirstMessage ? 'NO --continue flag' : 'WITH --continue flag'})`);
-        console.log(`🧠 Model: ${model || 'claude-opus-4-5-20251101 (default)'}`);
+        console.log(`🧠 Model: ${resolveModel(model) || DEFAULT_AGENT_MODEL}`);
         console.log(`🔌 MCP Config: ${mcpConfig ? 'Yes (RevenueCat)' : 'No'}`);
         response = await e2bManager.executeAgent(prompt, 'claude', {
           onStdout: handleStdout,
@@ -622,9 +626,12 @@ export const runAgent = inngest.createFunction(
         console.log('✅ CLAUDE COMMAND COMPLETED');
       } else if (agentType === 'gemini') {
         console.log('🤖 EXECUTING GEMINI COMMAND...');
+        console.log(`🧠 Model: ${model || 'gemini-3.5-flash-lite (default)'}`);
         response = await e2bManager.executeAgent(prompt, 'gemini', {
           onStdout: handleStdout,
-          onStderr: handleStderr
+          onStderr: handleStderr,
+          isFirstMessage: isFirstMessage,
+          model: model
         });
         console.log('✅ GEMINI COMMAND COMPLETED');
       } else {
@@ -647,7 +654,7 @@ export const runAgent = inngest.createFunction(
       // (E2B streams stdout via callback, not in the response object)
       console.log('📨 STARTING MESSAGE TRACKING...');
       console.log('📏 Accumulated stdout length:', accumulatedStdout.length);
-      await handleMessageTracking(accumulatedStdout, id, lastAssistantMessageId);
+      await handleMessageTracking(accumulatedStdout, id, lastAssistantMessageId, model);
       console.log('✅ MESSAGE TRACKING COMPLETED');
 
       return response;
@@ -890,7 +897,7 @@ async function handleToolUse(data: any, sessionId: Id<"sessions">, createdAt?: n
   }
 }
 
-async function handleMessageTracking(stdout: string, sessionId: Id<"sessions">, messageId?: Id<"messages"> | null) {
+async function handleMessageTracking(stdout: string, sessionId: Id<"sessions">, messageId?: Id<"messages"> | null, model?: string) {
   console.log('📨 MESSAGE TRACKING: Starting message tracking...');
   console.log('📊 Stdout length:', stdout.length);
   console.log('🆔 Provided message ID:', messageId);
@@ -908,9 +915,9 @@ async function handleMessageTracking(stdout: string, sessionId: Id<"sessions">, 
     // Get billing status from Convex (uses globalConfig for agent type)
     // This ensures consistency with the billing system
     const billingStatus = await fetchQuery(api.billingSwitch.getBillingStatus, { clerkId });
-    const agentType = billingStatus?.agentType || 'claude';
-    const billingMode = billingStatus?.billingMode || 'tokens';
-    console.log('🤖 Agent Type (from globalConfig):', agentType, 'Billing Mode:', billingMode);
+    const agentType = resolveAgentType(model, billingStatus?.agentType);
+    const billingMode = agentType === 'cursor' ? 'tokens' : 'credits';
+    console.log('🤖 Agent Type:', agentType, '| Billing Mode:', billingMode, '| Model:', model || 'default');
 
     // For Claude mode, if no messageId was provided, create message from result
     let finalMessageId = messageId;

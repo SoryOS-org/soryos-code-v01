@@ -4388,8 +4388,12 @@ static UIColor *ChatColorHeaderBorder(void) { return [UIColor colorWithWhite:1.0
             NSString *sessionIdString = session[@"sessionId"];
             NSString *repository = session[@"repository"];
 
-            // Get selected Claude model from NSUserDefaults (only used for Claude agent)
-            NSString *selectedModel = [[NSUserDefaults standardUserDefaults] stringForKey:@"SELECTED_CLAUDE_MODEL"];
+            // Selected agent model (OpenRouter free / Gemini) - credit mode only
+            NSString *selectedModel = nil;
+            if ([self.billingMode isEqualToString:@"credits"]) {
+              selectedModel = [[NSUserDefaults standardUserDefaults]
+                  stringForKey:@"SelectedClaudeModel"] ?: @"cohere/north-mini-code:free";
+            }
 
             [backendService
                 triggerAIResponseWithSessionId:sessionIdString
@@ -4470,12 +4474,13 @@ static UIColor *ChatColorHeaderBorder(void) { return [UIColor colorWithWhite:1.0
                                       NSString *repository =
                                           session[@"repository"];
 
-                                      // Get selected Claude model from NSUserDefaults (only used for Claude agent)
+                                      // Get selected model from NSUserDefaults
+                                      // (OpenRouter free model or Gemini id)
                                       NSString *selectedModel = nil;
                                       if ([self.billingMode isEqualToString:@"credits"]) {
                                         selectedModel = [[NSUserDefaults standardUserDefaults]
-                                            stringForKey:@"SelectedClaudeModel"] ?: @"claude-opus-4-5-20251101";
-                                        NSLog(@"🧠 [ChatView] Using Claude model: %@", selectedModel);
+                                            stringForKey:@"SelectedClaudeModel"] ?: @"cohere/north-mini-code:free";
+                                        NSLog(@"🧠 [ChatView] Using agent model: %@", selectedModel);
                                       }
 
                                       [backendService

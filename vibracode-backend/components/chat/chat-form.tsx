@@ -13,6 +13,7 @@ import { TemplateSelector } from "./template-selector";
 import { RepositorySelector } from "./repository-selector";
 import { MessageWarning } from "./message-warning";
 import { ModelSelector, ClaudeModel } from "./model-selector";
+import { DEFAULT_AGENT_MODEL } from "@/lib/models";
 
 type FormData = {
   message: string;
@@ -62,7 +63,7 @@ export default function ChatForm({
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<ClaudeModel>("claude-opus-4-5-20251101");
+  const [selectedModel, setSelectedModel] = useState<ClaudeModel>(DEFAULT_AGENT_MODEL);
 
   const { register, handleSubmit, reset, watch, formState, setValue } =
     useForm<FormData>({

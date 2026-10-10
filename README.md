@@ -99,7 +99,7 @@ Every other AI app builder is closed-source. You can't see how it works, can't c
 
 **60fps native chat UI** built with Texture + IGListKit. Off-main-thread rendering. No jank.
 
-**Multi-AI providers** -- Claude (default), Cursor, Gemini. Switch with one env var.
+**Free AI providers** -- 14 OpenRouter free models (default), 7 Google Gemini models, Cursor. Pick the model per message from the chat input menu.
 
 **E2B cloud sandboxes** for isolated, safe code execution.
 
@@ -154,7 +154,8 @@ Every other AI app builder is closed-source. You can't see how it works, can't c
 
 | Required | Purpose |
 |----------|---------|
-| `ANTHROPIC_API_KEY` | AI code generation (Claude) |
+| `OPENROUTER_API_KEY` | AI code generation (Claude Code CLI on free models) ([sign up](https://openrouter.ai)) |
+| `GEMINI_API_KEY` | Google AI Studio free tier, used by the Gemini agent ([sign up](https://aistudio.google.com)) |
 | `E2B_API_KEY` | Cloud sandboxes ([sign up](https://e2b.dev)) |
 | Clerk publishable + secret keys | Authentication ([sign up](https://clerk.com)) |
 | Convex deployment URL | Real-time database ([sign up](https://convex.dev)) |
@@ -245,7 +246,7 @@ vibra-code/
 | **Database** | Convex (real-time) |
 | **Jobs** | Inngest |
 | **Sandboxes** | E2B |
-| **AI** | Claude Code CLI / Cursor / Gemini |
+| **AI** | Claude Code CLI (OpenRouter free models) / Gemini CLI / Cursor |
 | **Auth** | Clerk |
 | **Payments** | Stripe + RevenueCat (optional) |
 | **Mobile** | React Native / Expo SDK 54 |
@@ -296,7 +297,7 @@ The heart of the mobile app is a **high-performance native chat UI** built with 
 
 | File | Purpose |
 |------|---------|
-| **`+APIModal.m`** | AI provider selector (Claude, Cursor, Gemini) |
+| **`+APIModal.m`** | Sample AI model catalog modal |
 | **`+FilesModal.m`** | File browser — browse generated project files |
 | **`+LogsModal.m`** | Live logs viewer from the sandbox |
 | **`+PublishModal.m`** | Publish to GitHub / share project |

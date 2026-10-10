@@ -45,8 +45,11 @@ RUN cd /tmp && \
 # Install Jupyter Lab
 RUN pip3 install jupyterlab
 
-# Install Anthropic Claude CLI
+# Install Anthropic Claude CLI (runs on OpenRouter free models)
 RUN npm install -g @anthropic-ai/claude-code
+
+# Install Google Gemini CLI (runs on the Google AI Studio free tier)
+RUN npm install -g @google/gemini-cli
 
 # Add Claude MCP context7
 ARG CONTEXT7_API_KEY
@@ -137,8 +140,8 @@ USER root
 # Values are injected via build args - pass them when building the template
 ARG OPENAI_PROXY_HOST=https://api.openai.com
 ARG OPENAI_API_KEY
-ARG ANTHROPIC_PROXY_HOST=https://api.anthropic.com
-ARG ANTHROPIC_API_KEY
+ARG OPENROUTER_BASE_URL=https://openrouter.ai/api
+ARG OPENROUTER_API_KEY
 ARG GROK_PROXY_HOST=https://api.x.ai
 ARG GROK_API_KEY
 RUN echo "{\
@@ -148,12 +151,11 @@ RUN echo "{\
     \"authHeader\": \"Authorization\",\
     \"authPrefix\": \"Bearer \"\
   },\
-  \"anthropic\": {\
-    \"host\": \"${ANTHROPIC_PROXY_HOST}\",\
-    \"key\": \"${ANTHROPIC_API_KEY}\",\
-    \"authHeader\": \"x-api-key\",\
-    \"authPrefix\": \"\",\
-    \"extraHeaders\": {\"anthropic-version\": \"2023-06-01\"}\
+  \"openrouter\": {\
+    \"host\": \"${OPENROUTER_BASE_URL}\",\
+    \"key\": \"${OPENROUTER_API_KEY}\",\
+    \"authHeader\": \"Authorization\",\
+    \"authPrefix\": \"Bearer \"\
   },\
   \"grok\": {\
     \"host\": \"${GROK_PROXY_HOST}\",\
@@ -257,6 +259,7 @@ echo "Session token: ${EXPO_PUBLIC_SESSION_TOKEN:0:8}..."\n\
 echo "Node: $(node --version)"\n\
 echo "Bun: $(bun --version)"\n\
 echo "Claude: $(claude --version 2>/dev/null || echo not found)"\n\
+echo "Gemini: $(gemini --version 2>/dev/null || echo not found)"\n\
 echo "Cursor: $(cursor-agent --version 2>/dev/null || echo not found)"\n\
 \n\
 echo "========================================"\n\

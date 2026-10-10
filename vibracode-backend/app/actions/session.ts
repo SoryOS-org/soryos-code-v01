@@ -2,6 +2,7 @@
 import { generateObject } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
+import { DEFAULT_OPENROUTER_MODEL } from "@/lib/models";
 
 export async function generateSessionTitle(prompt: string) {
   const openai = createOpenAI({
@@ -10,7 +11,7 @@ export async function generateSessionTitle(prompt: string) {
   });
 
   const response = await generateObject({
-    model: openai("anthropic/claude-3.5-sonnet"),
+    model: openai(DEFAULT_OPENROUTER_MODEL),
     schema: z.object({
       title: z.string(),
     }),

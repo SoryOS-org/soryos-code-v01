@@ -16,7 +16,8 @@ You will need accounts and API keys from the following services:
 
 | Service | Purpose | Sign Up |
 |---------|---------|---------|
-| **Anthropic** | Claude AI agent for code generation | https://console.anthropic.com |
+| **OpenRouter** | Claude Code CLI runs on free (`:free`) models | https://openrouter.ai |
+| **Google AI Studio** | Gemini agent free tier (Gemini CLI) | https://aistudio.google.com |
 | **E2B** | Cloud sandboxes for code execution | https://e2b.dev |
 | **Clerk** | Authentication (shared between mobile & web) | https://clerk.com |
 | **Convex** | Real-time database | https://convex.dev |
@@ -29,7 +30,8 @@ You will need accounts and API keys from the following services:
 Create `vibracode-backend/.env.local`:
 
 ```
-ANTHROPIC_API_KEY=
+OPENROUTER_API_KEY=
+GEMINI_API_KEY=
 E2B_API_KEY=
 NEXT_PUBLIC_CONVEX_URL=
 CONVEX_DEPLOYMENT=

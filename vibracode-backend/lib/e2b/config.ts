@@ -7,6 +7,7 @@
 import { Sandbox } from '@e2b/code-interpreter';
 import { Octokit } from '@octokit/rest';
 import crypto from 'crypto';
+import { DEFAULT_OPENROUTER_MODEL, DEFAULT_GEMINI_MODEL, GEMINI_MODELS, resolveModel } from '../models';
 
 export interface E2BSandboxConfig {
 templateId?: string;
@@ -162,8 +163,8 @@ exitCode: 0 // Background commands don't have immediate exit codes
   stderr: string;
   exitCode: number;
   }> {
-  // Use provided model or default to opus
-  const claudeModel = options.model || 'claude-opus-4-5-20251101';
+  // Resolve against the OpenRouter free catalog (legacy Claude ids are mapped)
+  const claudeModel = resolveModel(options.model) || DEFAULT_OPENROUTER_MODEL;
   // Skip --continue flag for first message to start fresh session
   const continueFlag = options.isFirstMessage ? '' : '--continue';
   // Use base64 encoding to safely pass the prompt without shell escaping issues (backticks, quotes, etc.)
@@ -178,10 +179,16 @@ exitCode: 0 // Background commands don't have immediate exit codes
     mcpFlag = `--mcp-config "$(echo '${mcpConfigBase64}' | base64 -d)"`;
   }
 
-  const anthropicKey = process.env.ANTHROPIC_SANDBOX_API_KEY;
-  const anthropicBaseUrl = process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com';
-  if (!anthropicKey) throw new Error('ANTHROPIC_SANDBOX_API_KEY environment variable is required');
-  const claudeCommand = `export ANTHROPIC_API_KEY='${anthropicKey}' && export ANTHROPIC_BASE_URL='${anthropicBaseUrl}' && echo '${promptBase64}' | base64 -d | claude -p --output-format stream-json --verbose --dangerously-skip-permissions ${mcpFlag} ${continueFlag} --model ${claudeModel}`;
+  // Claude Code talks its native Anthropic protocol directly to OpenRouter's
+  // Anthropic-compatible endpoint - no local proxy needed.
+  // ANTHROPIC_AUTH_TOKEN carries the OpenRouter key (bearer auth) while
+  // ANTHROPIC_API_KEY must be explicitly empty, otherwise Claude Code falls
+  // back to authenticating against api.anthropic.com.
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+  const openrouterBaseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api';
+  if (!openrouterKey) throw new Error('OPENROUTER_API_KEY environment variable is required');
+  const safeModel = claudeModel.replace(/[^A-Za-z0-9._:/-]/g, '') || DEFAULT_OPENROUTER_MODEL;
+  const claudeCommand = `export ANTHROPIC_BASE_URL='${openrouterBaseUrl}' && export ANTHROPIC_AUTH_TOKEN='${openrouterKey}' && export ANTHROPIC_API_KEY='' && export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1 && echo '${promptBase64}' | base64 -d | claude -p --output-format stream-json --verbose --dangerously-skip-permissions ${mcpFlag} ${continueFlag} --model '${safeModel}'`;
 
 return executeCommand(sandbox, claudeCommand, { ...options, cwd: '/vibe0' });
 }
@@ -224,6 +231,8 @@ return executeCommand(sandbox, cursorCommand, { ...options, cwd: '/vibe0' });
   options: {
   onStdout?: (data: string) => void;
   onStderr?: (data: string) => void;
+  isFirstMessage?: boolean;
+  model?: string;
   } = {}
   ): Promise<{
   stdout: string;
@@ -234,7 +243,13 @@ return executeCommand(sandbox, cursorCommand, { ...options, cwd: '/vibe0' });
   const promptBase64 = Buffer.from(prompt, 'utf8').toString('base64');
   const geminiApiKey = process.env.GEMINI_API_KEY;
   if (!geminiApiKey) throw new Error('GEMINI_API_KEY environment variable is required');
-  const geminiCommand = `export GEMINI_API_KEY='${geminiApiKey}' && echo '${promptBase64}' | base64 -d | gemini --output-format stream-json --yolo`;
+  // Only Gemini ids still listed in GEMINI_MODELS are valid here - anything
+  // else (OpenRouter ids, retired endpoints) falls back to the safe default.
+  const requested = (options.model || '').trim();
+  const geminiModel = (GEMINI_MODELS.some(entry => entry.id === requested) ? requested : DEFAULT_GEMINI_MODEL)
+    .replace(/[^A-Za-z0-9._:-]/g, '') || DEFAULT_GEMINI_MODEL;
+  // --skip-trust: sandbox folders are never trusted interactively, without it the CLI refuses headless runs
+  const geminiCommand = `export GEMINI_API_KEY='${geminiApiKey}' && echo '${promptBase64}' | base64 -d | gemini --model '${geminiModel}' --output-format stream-json --yolo --skip-trust`;
 
 return executeCommand(sandbox, geminiCommand, { ...options, cwd: '/vibe0' });
 }

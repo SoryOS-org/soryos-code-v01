@@ -837,10 +837,10 @@
     body[@"repository"] = repository;
   }
 
-  // Add model if provided (for Claude agent)
+  // Add model if provided (OpenRouter free model or Gemini id)
   if (model && model.length > 0) {
     body[@"model"] = model;
-    NSLog(@"🧠 [EXChatBackendService] Using Claude model: %@", model);
+    NSLog(@"🧠 [EXChatBackendService] Using agent model: %@", model);
   }
 
   NSError *jsonError;

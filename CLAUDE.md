@@ -145,7 +145,7 @@ cd android && ./gradlew app:assembleDebug
 - **E2B** - Cloud sandboxes for code execution
 - **Clerk** - Authentication
 - **Stripe** - Web payments (optional)
-- **Claude Agent SDK** - AI code generation
+- **Claude Code CLI** - AI code generation on OpenRouter free models (OpenRouter + Gemini CLI for Gemini models)
 
 ### Mobile Stack
 
@@ -198,7 +198,8 @@ See `.env.example` files for full documentation:
 
 **Backend** (`vibracode-backend/.env.local`):
 ```
-ANTHROPIC_API_KEY=
+OPENROUTER_API_KEY=
+GEMINI_API_KEY=
 E2B_API_KEY=
 NEXT_PUBLIC_CONVEX_URL=
 CONVEX_DEPLOYMENT=
@@ -216,17 +217,19 @@ EXPO_PUBLIC_V0_API_URL=http://localhost:3000
 ## Billing System
 
 - **Token mode** (Cursor agent): Fixed messages per plan
-- **Credit mode** (Claude agent): Usage-based with 2x multiplier
+- **Credit mode** (OpenRouter / Gemini agents): Usage-based with 2x multiplier
 - Plans: free, weekly_plus, pro, business, enterprise
 - RevenueCat handles mobile subscriptions, Stripe handles web
 - Payments are optional for self-hosting
 
 ## Agent Types
 
-Configurable via `AGENT_TYPE` environment variable:
-- `claude` - Claude agent via Agent SDK (credit billing, default)
+The agent is chosen per message from the model id (`lib/models.ts` -> `resolveAgentType`), falling back to `AGENT_TYPE`:
+- `claude` - Claude Code CLI on OpenRouter free models (credit billing, default)
+- `gemini` - Gemini CLI on Google AI Studio models (credit billing)
 - `cursor` - Cursor AI agent (token billing)
-- `gemini` - Gemini agent
+
+Models (`lib/models.ts`): `OPENROUTER_FREE_MODELS` (14 `:free` ids), `GEMINI_MODELS` (7 Gemini ids), defaults via `DEFAULT_AGENT_MODEL` / `DEFAULT_GEMINI_MODEL`.
 
 ## iOS Build Notes
 
@@ -309,6 +312,7 @@ Uses **Texture (AsyncDisplayKit)** + **IGListKit** for 60fps scrolling:
 Input area with: text input, send button, mic button (voice), image button, model selector.
 - Voice recording via `EXAudioRecorderService` -> `EXAssemblyAIService` for transcription
 - Image attachments stored in `pendingImageAttachments`
+- Model selector shows two submenus: **OpenRouter Free** (`OPENROUTER_FREE_MODELS`) and **Google Gemini** (`GEMINI_MODELS`). Selected id persisted under the legacy NSUserDefaults key `SelectedClaudeModel`.
 
 #### Top Bar
 Shows app name (centered in preview mode, left-aligned in chat mode).

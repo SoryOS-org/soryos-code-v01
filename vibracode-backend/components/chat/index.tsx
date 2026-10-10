@@ -11,6 +11,7 @@ import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 
 import { ClaudeModel } from "./model-selector";
+import { DEFAULT_AGENT_MODEL } from "@/lib/models";
 
 interface Todo {
   id: string;
@@ -220,7 +221,7 @@ export default function Chat({
           message: cleanMessage,
           repository: session.repository,
           token: "", // Token will be retrieved in the action using Clerk
-          model: model || "claude-opus-4-5-20251101",
+          model: model || DEFAULT_AGENT_MODEL,
         });
       } catch (agentError) {
         console.error("Error running agent:", agentError);

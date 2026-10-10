@@ -205,6 +205,122 @@ static UIImage *createClaudeIconImage(CGFloat size, UIColor *color) {
   return [image imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
 }
 
+// ---------------------------------------------------------------------------
+// Agent model catalog
+// Keep in sync with vibracode-backend/lib/models.ts
+// OpenRouter free models are executed by the Claude Code agent, Gemini models
+// by the Gemini agent on the Google AI Studio free tier.
+// ---------------------------------------------------------------------------
+
+static NSString *const kSelectedClaudeModelKey = @"SelectedClaudeModel";
+static NSString *const kDefaultAgentModel = @"cohere/north-mini-code:free";
+
+static NSArray<NSDictionary *> *OpenRouterFreeModelList(void) {
+  return @[
+    @{@"id" : @"cohere/north-mini-code:free", @"name" : @"North Mini Code"},
+    @{@"id" : @"thinkingmachines/inkling:free", @"name" : @"Inkling"},
+    @{@"id" : @"thinkingmachines/inkling-small:free", @"name" : @"Inkling Small"},
+    @{@"id" : @"nvidia/nemotron-3-super-120b-a12b:free", @"name" : @"Nemotron 3 Super"},
+    @{@"id" : @"nvidia/nemotron-3.5-lightning:free", @"name" : @"Nemotron 3.5 Lightning"},
+    @{@"id" : @"nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      @"name" : @"Nemotron 3 Nano Omni"},
+    @{@"id" : @"poolside/laguna-s-2.1:free", @"name" : @"Laguna S 2.1"},
+    @{@"id" : @"poolside/laguna-xs-2.1:free", @"name" : @"Laguna XS 2.1"},
+    @{@"id" : @"google/gemma-4-31b-it:free", @"name" : @"Gemma 4 31B"},
+    @{@"id" : @"google/gemma-4-26b-a4b-it:free", @"name" : @"Gemma 4 26B"},
+    @{@"id" : @"apodex/apodex-1.1-mini:free", @"name" : @"Apodex 1.1 Mini"},
+    @{@"id" : @"dots-studio/dots-3-note-preview:free", @"name" : @"Dots 3 Note"},
+    @{@"id" : @"liquid/lfm-2.5-2.6b:free", @"name" : @"LFM 2.5 2.6B"},
+    @{@"id" : @"nvidia/nemotron-3.5-content-safety:free", @"name" : @"Nemotron 3.5 Safety"},
+  ];
+}
+
+static NSArray<NSDictionary *> *GeminiModelList(void) {
+  return @[
+    @{@"id" : @"gemini-3.8-flash", @"name" : @"Gemini 3.8 Flash"},
+    @{@"id" : @"gemini-3.7-flash", @"name" : @"Gemini 3.7 Flash"},
+    @{@"id" : @"gemini-3.6-flash", @"name" : @"Gemini 3.6 Flash"},
+    @{@"id" : @"gemini-3.5-flash", @"name" : @"Gemini 3.5 Flash"},
+    @{@"id" : @"gemini-3.5-flash-lite", @"name" : @"Gemini 3.5 Flash-Lite"},
+    @{@"id" : @"gemini-3.1-flash-lite", @"name" : @"Gemini 3.1 Flash-Lite"},
+    @{@"id" : @"gemini-3-flash-preview", @"name" : @"Gemini 3 Flash Preview"},
+  ];
+}
+
+static BOOL IsKnownAgentModel(NSString *modelId) {
+  if (modelId.length == 0) {
+    return NO;
+  }
+  for (NSDictionary *model in OpenRouterFreeModelList()) {
+    if ([model[@"id"] isEqualToString:modelId]) {
+      return YES;
+    }
+  }
+  for (NSDictionary *model in GeminiModelList()) {
+    if ([model[@"id"] isEqualToString:modelId]) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
+// Reads the persisted model id, migrating ids saved by older builds
+static NSString *SelectedAgentModel(void) {
+  NSString *stored =
+      [[NSUserDefaults standardUserDefaults] stringForKey:kSelectedClaudeModelKey];
+  if (IsKnownAgentModel(stored)) {
+    return stored;
+  }
+  if (stored.length > 0) {
+    [[NSUserDefaults standardUserDefaults] setObject:kDefaultAgentModel
+                                              forKey:kSelectedClaudeModelKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+  }
+  return kDefaultAgentModel;
+}
+
+static NSArray<UIAction *> *BuildModelActions(NSArray<NSDictionary *> *models,
+                                              NSString *selectedModel,
+                                              void (^handler)(NSString *)) {
+  NSMutableArray<UIAction *> *actions =
+      [NSMutableArray arrayWithCapacity:models.count];
+  for (NSDictionary *model in models) {
+    NSString *modelId = model[@"id"];
+    UIAction *action = [UIAction
+        actionWithTitle:model[@"name"]
+                  image:nil
+             identifier:modelId
+                handler:^(__kindof UIAction *_Nonnull action) {
+                  handler(modelId);
+                }];
+    action.state = [selectedModel isEqualToString:modelId]
+        ? UIMenuElementStateOn
+        : UIMenuElementStateOff;
+    [actions addObject:action];
+  }
+  return actions;
+}
+
+// Two level menu: provider -> models
+static UIMenu *BuildAgentModelMenu(NSString *selectedModel,
+                                   void (^handler)(NSString *)) {
+  UIMenu *openRouterMenu = [UIMenu
+      menuWithTitle:@"OpenRouter Free"
+               image:[UIImage systemImageNamed:@"arrow.triangle.branch"]
+          identifier:@"openrouter"
+             options:0
+            children:BuildModelActions(OpenRouterFreeModelList(), selectedModel,
+                                       handler)];
+  UIMenu *geminiMenu = [UIMenu menuWithTitle:@"Google Gemini"
+                                       image:[UIImage systemImageNamed:@"sparkles"]
+                                  identifier:@"gemini"
+                                     options:0
+                                    children:BuildModelActions(
+                                        GeminiModelList(), selectedModel, handler)];
+  return [UIMenu menuWithTitle:@"Select Model"
+                      children:@[ openRouterMenu, geminiMenu ]];
+}
+
 @implementation EXPreviewZoomManager (BottomBar)
 
 // Associated object keys for UITextView and height constraint
@@ -545,64 +661,17 @@ static char InputHeightConstraintKey;
 
   // Configure UIMenu for model selection (iOS 14+)
   if (@available(iOS 14.0, *)) {
-    NSString *selectedModel = [[NSUserDefaults standardUserDefaults]
-        stringForKey:@"SelectedClaudeModel"] ?: @"claude-opus-4-5-20251101";
+    NSString *selectedModel = SelectedAgentModel();
 
     __weak typeof(self) weakSelf = self;
+    void (^selectModel)(NSString *) = ^(NSString *modelId) {
+      [[NSUserDefaults standardUserDefaults] setObject:modelId
+                                                forKey:kSelectedClaudeModelKey];
+      [[NSUserDefaults standardUserDefaults] synchronize];
+      [weakSelf updateModelSelectorMenu];
+    };
 
-    // Create Claude icon for menu items
-    UIImage *menuClaudeIcon = createClaudeIconImage(18, claudeColor);
-
-    UIAction *opusAction = [UIAction
-        actionWithTitle:@"Claude Opus 4.5"
-                  image:menuClaudeIcon
-             identifier:@"claude-opus-4-5-20251101"
-                handler:^(__kindof UIAction *_Nonnull action) {
-                  [[NSUserDefaults standardUserDefaults]
-                      setObject:@"claude-opus-4-5-20251101"
-                         forKey:@"SelectedClaudeModel"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
-                  [weakSelf updateModelSelectorMenu];
-                }];
-    if ([selectedModel isEqualToString:@"claude-opus-4-5-20251101"]) {
-      opusAction.state = UIMenuElementStateOn;
-    }
-
-    UIAction *sonnetAction = [UIAction
-        actionWithTitle:@"Claude Sonnet 4.5"
-                  image:menuClaudeIcon
-             identifier:@"claude-sonnet-4-5"
-                handler:^(__kindof UIAction *_Nonnull action) {
-                  [[NSUserDefaults standardUserDefaults]
-                      setObject:@"claude-sonnet-4-5"
-                         forKey:@"SelectedClaudeModel"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
-                  [weakSelf updateModelSelectorMenu];
-                }];
-    if ([selectedModel isEqualToString:@"claude-sonnet-4-5"]) {
-      sonnetAction.state = UIMenuElementStateOn;
-    }
-
-    UIAction *haikuAction = [UIAction
-        actionWithTitle:@"Claude Haiku 4.5"
-                  image:menuClaudeIcon
-             identifier:@"claude-haiku-4-5"
-                handler:^(__kindof UIAction *_Nonnull action) {
-                  [[NSUserDefaults standardUserDefaults]
-                      setObject:@"claude-haiku-4-5"
-                         forKey:@"SelectedClaudeModel"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
-                  [weakSelf updateModelSelectorMenu];
-                }];
-    if ([selectedModel isEqualToString:@"claude-haiku-4-5"]) {
-      haikuAction.state = UIMenuElementStateOn;
-    }
-
-    UIMenu *modelMenu = [UIMenu
-        menuWithTitle:@"Select Model"
-             children:@[opusAction, sonnetAction, haikuAction]];
-
-    modelSelectorButton.menu = modelMenu;
+    modelSelectorButton.menu = BuildAgentModelMenu(selectedModel, selectModel);
     modelSelectorButton.showsMenuAsPrimaryAction = YES;
   }
 
@@ -3720,62 +3789,17 @@ static UIColor *VideoPreviewAccentColor(void) {
   if (!button) return;
 
   if (@available(iOS 14.0, *)) {
-    NSString *selectedModel = [[NSUserDefaults standardUserDefaults]
-        stringForKey:@"SelectedClaudeModel"] ?: @"claude-opus-4-5-20251101";
+    NSString *selectedModel = SelectedAgentModel();
 
     __weak typeof(self) weakSelf = self;
+    void (^selectModel)(NSString *) = ^(NSString *modelId) {
+      [[NSUserDefaults standardUserDefaults] setObject:modelId
+                                                forKey:kSelectedClaudeModelKey];
+      [[NSUserDefaults standardUserDefaults] synchronize];
+      [weakSelf updateModelSelectorMenu];
+    };
 
-    // Create Claude icon for menu items
-    UIColor *claudeColor = [UIColor colorWithRed:0.85 green:0.467 blue:0.341 alpha:1.0]; // #D97757
-    UIImage *menuClaudeIcon = createClaudeIconImage(18, claudeColor);
-
-    UIAction *opusAction = [UIAction
-        actionWithTitle:@"Claude Opus 4.5"
-                  image:menuClaudeIcon
-             identifier:@"claude-opus-4-5-20251101"
-                handler:^(__kindof UIAction *_Nonnull action) {
-                  [[NSUserDefaults standardUserDefaults]
-                      setObject:@"claude-opus-4-5-20251101"
-                         forKey:@"SelectedClaudeModel"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
-                  [weakSelf updateModelSelectorMenu];
-                }];
-    opusAction.state = [selectedModel isEqualToString:@"claude-opus-4-5-20251101"]
-        ? UIMenuElementStateOn : UIMenuElementStateOff;
-
-    UIAction *sonnetAction = [UIAction
-        actionWithTitle:@"Claude Sonnet 4.5"
-                  image:menuClaudeIcon
-             identifier:@"claude-sonnet-4-5"
-                handler:^(__kindof UIAction *_Nonnull action) {
-                  [[NSUserDefaults standardUserDefaults]
-                      setObject:@"claude-sonnet-4-5"
-                         forKey:@"SelectedClaudeModel"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
-                  [weakSelf updateModelSelectorMenu];
-                }];
-    sonnetAction.state = [selectedModel isEqualToString:@"claude-sonnet-4-5"]
-        ? UIMenuElementStateOn : UIMenuElementStateOff;
-
-    UIAction *haikuAction = [UIAction
-        actionWithTitle:@"Claude Haiku 4.5"
-                  image:menuClaudeIcon
-             identifier:@"claude-haiku-4-5"
-                handler:^(__kindof UIAction *_Nonnull action) {
-                  [[NSUserDefaults standardUserDefaults]
-                      setObject:@"claude-haiku-4-5"
-                         forKey:@"SelectedClaudeModel"];
-                  [[NSUserDefaults standardUserDefaults] synchronize];
-                  [weakSelf updateModelSelectorMenu];
-                }];
-    haikuAction.state = [selectedModel isEqualToString:@"claude-haiku-4-5"]
-        ? UIMenuElementStateOn : UIMenuElementStateOff;
-
-    UIMenu *modelMenu = [UIMenu
-        menuWithTitle:@"Select Model"
-             children:@[opusAction, sonnetAction, haikuAction]];
-
-    button.menu = modelMenu;
+    button.menu = BuildAgentModelMenu(selectedModel, selectModel);
 
     NSLog(@"🧠 [BottomBar] Model selector updated: %@", selectedModel);
   }
