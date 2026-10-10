@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "concurrently \"npm run dev\" \"npm run backend\"",
     "lint": "next lint",
+    "test": "node --import tsx --test lib/providers/__tests__/*.test.ts",
     "backend": "npx inngest-cli@latest dev"
   },
   "dependencies": {
@@ -82,6 +83,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "tw-animate-css": "^1.3.4",
     "typescript": "^5"
   }

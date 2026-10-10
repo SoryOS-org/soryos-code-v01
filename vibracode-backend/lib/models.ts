@@ -1,16 +1,16 @@
 /**
  * Central catalog of AI models exposed by Vibra Code.
  *
- * Two providers are supported, both on free tiers:
- *   - OpenRouter free models (`:free` suffix) -> executed by the Claude Code CLI
- *     pointed at OpenRouter (see lib/e2b/config.ts)
- *   - Google Gemini models -> executed by the Gemini CLI against the Google AI
- *     Studio free tier (GEMINI_API_KEY)
+ * Three providers are supported, all via server-side APIs that do not need a
+ * CLI inside the sandbox (see lib/providers/):
+ *   - OpenRouter free models (`:free` suffix), default `openrouter/free`
+ *   - Mistral AI official API (`mistral-*`, `devstral-*`, ...)
+ *   - Google Gemini official API (`gemini-*`)
  *
  * This module is the single source of truth for:
  *   - the model lists rendered by the web + iOS selectors
  *   - the default model used when a client does not send one
- *   - resolving which agent must execute a given model
+ *   - resolving which agent must execute a given model (legacy CLI path)
  */
 
 export type AgentType = "claude" | "cursor" | "gemini";
@@ -59,8 +59,24 @@ export const GEMINI_MODELS: ModelOption[] = [
   { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview", description: "First Gemini 3 Flash", tools: true },
 ];
 
+/**
+ * Mistral / Devstral models on the official Mistral API.
+ * Mirrors `lib/providers/mistral.ts` — keep the two lists in sync.
+ */
+export const MISTRAL_MODELS: ModelOption[] = [
+  { id: "mistral-large-latest", name: "Mistral Large", description: "Flagship model, best for agents", tools: true },
+  { id: "mistral-medium-latest", name: "Mistral Medium", description: "Balanced cost and quality", tools: true },
+  { id: "mistral-small-latest", name: "Mistral Small", description: "Fast and cheap", tools: true },
+  { id: "devstral-small-latest", name: "Devstral Small", description: "Software engineering model", tools: true },
+  { id: "devstral-medium-latest", name: "Devstral Medium", description: "Software engineering model", tools: true },
+  { id: "codestral-latest", name: "Codestral", description: "Code generation model", tools: true },
+  { id: "ministral-8b-latest", name: "Ministral 8B", description: "Small edge model", tools: true },
+  { id: "open-mistral-nemo", name: "Mistral NeMo", description: "Open model; tool calling limited", tools: false },
+];
+
 export const ALL_AGENT_MODELS: ModelOption[] = [
   ...OPENROUTER_FREE_MODELS,
+  ...MISTRAL_MODELS,
   ...GEMINI_MODELS,
 ];
 
@@ -91,6 +107,21 @@ export function isGeminiModel(model?: string | null): boolean {
   return model.startsWith("gemini-");
 }
 
+export function isMistralModel(model?: string | null): boolean {
+  if (!model) return false;
+  return (
+    model.startsWith("mistral-") ||
+    model.startsWith("ministral-") ||
+    model.startsWith("devstral-") ||
+    model.startsWith("codestral-") ||
+    model.startsWith("open-mistral") ||
+    model.startsWith("open-mixtral") ||
+    model.startsWith("magistral-") ||
+    model.startsWith("pixtral-") ||
+    model.startsWith("mistralai/")
+  );
+}
+
 export function isLegacyClaudeModel(model?: string | null): boolean {
   if (!model) return false;
   return model.startsWith("claude-");
@@ -104,6 +135,7 @@ export function resolveModel(model?: string | null, agentType?: AgentType): stri
   if (LEGACY_MODEL_ALIASES[id]) return LEGACY_MODEL_ALIASES[id];
   // Only ids that are still listed in the catalogs can be executed - anything
   // else (retired endpoint, paid id, typo) falls back to the safe default.
+  if (isMistralModel(id)) return MISTRAL_MODELS.some(entry => entry.id === id) ? id : "mistral-large-latest";
   if (isGeminiModel(id)) return GEMINI_MODELS.some(entry => entry.id === id) ? id : DEFAULT_GEMINI_MODEL;
   if (isOpenRouterModel(id)) return OPENROUTER_FREE_MODELS.some(entry => entry.id === id) ? id : DEFAULT_OPENROUTER_MODEL;
   if (isLegacyClaudeModel(id)) return DEFAULT_OPENROUTER_MODEL;

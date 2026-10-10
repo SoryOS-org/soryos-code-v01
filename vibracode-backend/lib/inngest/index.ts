@@ -2,6 +2,7 @@
 export { inngest, sessionChannel, getInngestApp } from "./client";
 export { updateSessionStatus, addMessage, getSessionData, getSessionMessages } from "./middleware";
 export { runAgent } from "./functions/run-agent";
+export { runAgentProvider } from "./functions/run-agent-provider";
 export { createSession } from "./functions/create-session";
 export { pushToGitHub } from "./functions/push-to-github";
 export { generateVideo } from "./functions/generate-video";

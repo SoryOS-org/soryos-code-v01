@@ -76,18 +76,41 @@ export async function runAgentAction({
     }
   }
 
-  await inngest.send({
-    name: "vibracode/run.agent",
-    data: {
-      sessionId,
-      id,
-      message,
-      template,
-      repository,
-      token,
-      model,
-    },
-  });
+  // ROUTING: decide between the native backend engine (OpenRouter/Mistral/Gemini)
+  // and the legacy CLI engine (cursor / AGENT_ENGINE=cli rollback).
+  const { resolveEngine } = await import("@/lib/providers/registry");
+  const route = resolveEngine(model || null);
+  const sandboxId = sessionData?.sessionId;
+
+  console.log(`🧭 ENGINE ROUTE: model=${model || "(default)"} -> ${route.engine} (${route.provider}, AGENT_ENGINE=${process.env.AGENT_ENGINE || "auto"})`);
+
+  if (route.engine === "provider") {
+    await inngest.send({
+      name: "vibracode/run.agent.provider",
+      data: {
+        sessionId,
+        id,
+        message,
+        template,
+        repository,
+        model,
+        sandboxId,
+      },
+    });
+  } else {
+    await inngest.send({
+      name: "vibracode/run.agent",
+      data: {
+        sessionId,
+        id,
+        message,
+        template,
+        repository,
+        token,
+        model,
+      },
+    });
+  }
 
   return { success: true };
 }

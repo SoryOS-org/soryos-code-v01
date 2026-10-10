@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Check, Route, Sparkles } from "lucide-react";
+import { ChevronDown, Check, Route, Sparkles, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,8 +17,10 @@ import {
 import { cn } from "@/lib/utils";
 import {
   OPENROUTER_FREE_MODELS,
+  MISTRAL_MODELS,
   GEMINI_MODELS,
   DEFAULT_AGENT_MODEL,
+  isMistralModel,
   type ModelOption,
 } from "@/lib/models";
 
@@ -28,17 +30,28 @@ import {
  */
 export type ClaudeModel = string;
 
-const ProviderIcon = ({ provider, className }: { provider: "openrouter" | "gemini"; className?: string }) =>
+const ProviderIcon = ({
+  provider,
+  className,
+}: {
+  provider: "openrouter" | "mistral" | "gemini";
+  className?: string;
+}) =>
   provider === "gemini" ? (
     <Sparkles className={className} />
+  ) : provider === "mistral" ? (
+    <Database className={className} />
   ) : (
     <Route className={className} />
   );
 
-const providerOf = (id: string): "openrouter" | "gemini" =>
-  id.startsWith("gemini-") ? "gemini" : "openrouter";
+const providerOf = (id: string): "openrouter" | "mistral" | "gemini" => {
+  if (id.startsWith("gemini-")) return "gemini";
+  if (isMistralModel(id)) return "mistral";
+  return "openrouter";
+};
 
-const ALL_MODELS: ModelOption[] = [...OPENROUTER_FREE_MODELS, ...GEMINI_MODELS];
+const ALL_MODELS: ModelOption[] = [...OPENROUTER_FREE_MODELS, ...MISTRAL_MODELS, ...GEMINI_MODELS];
 
 const nameOf = (id: string) => ALL_MODELS.find((m) => m.id === id)?.name || id;
 
@@ -153,6 +166,15 @@ export function ModelSelector({
         </DropdownMenuSub>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
+            <Database className="mr-2 h-4 w-4" />
+            Mistral AI
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="max-h-[320px] overflow-y-auto">
+            {renderItems(MISTRAL_MODELS)}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
             <Sparkles className="mr-2 h-4 w-4" />
             Google Gemini
           </DropdownMenuSubTrigger>
@@ -162,7 +184,7 @@ export function ModelSelector({
         </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">
-          All models run on free tiers
+          OpenRouter runs on free tiers; Mistral & Gemini use their official APIs
         </DropdownMenuLabel>
       </DropdownMenuContent>
     </DropdownMenu>
