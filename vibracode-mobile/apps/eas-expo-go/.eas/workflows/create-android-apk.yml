@@ -1,0 +1,8 @@
+name: Create Android APK
+
+jobs:
+  build_android:
+    type: build
+    params:
+      platform: android
+      profile: versioned-client
