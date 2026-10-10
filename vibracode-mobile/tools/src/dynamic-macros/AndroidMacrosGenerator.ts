@@ -81,7 +81,11 @@ export async function generateAndroidBuildConstantsFromMacrosAsync(macros) {
       .join('')}.toString();
   }
   `
-    : null;
+    : `
+  public static String getBuildMachineKernelManifestAndAssetRequestHeaders() {
+    return "{}";
+  }
+  `;
 
   const source = `
 package host.exp.exponent.generated;

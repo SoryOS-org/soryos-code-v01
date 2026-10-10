@@ -31,6 +31,17 @@ elif [ "$EAS_BUILD_PLATFORM" = "ios" ]; then
   pod repo update master 2>&1 || true
 fi
 
+# Expo reads the Android manifest while resolving the build (before Gradle runs the
+# `et android-generate-dynamic-macros` task that normally creates it). Copy the
+# templates into place early so EAS can resolve the gradle project config.
+if [ "$EAS_BUILD_PLATFORM" = "android" ]; then
+  APP_ANDROID_DIR="$ROOT_DIR/apps/expo-go/android/app"
+  mkdir -p "$APP_ANDROID_DIR/src/main" "$APP_ANDROID_DIR/src/mobile" "$APP_ANDROID_DIR/src/quest"
+  cp "$ROOT_DIR/template-files/android/AndroidManifest.xml" "$APP_ANDROID_DIR/src/main/AndroidManifest.xml"
+  cp "$ROOT_DIR/template-files/android/mobile/AndroidManifest.xml" "$APP_ANDROID_DIR/src/mobile/AndroidManifest.xml"
+  cp "$ROOT_DIR/template-files/android/quest/AndroidManifest.xml" "$APP_ANDROID_DIR/src/quest/AndroidManifest.xml"
+fi
+
 if [ "$EAS_BUILD_PROFILE" = "release-client" ] || [ "$EAS_BUILD_PROFILE" = "publish-client" ]; then
   if [ "$EAS_BUILD_PLATFORM" = "android" ]; then
     sudo apt-get -y update
