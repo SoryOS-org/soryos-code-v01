@@ -1,13 +1,10 @@
-import type { ExpoConfig } from '@expo/config';
-import assert from 'assert';
-
 const base = {
   ios: {
-    bundleIdentifier: 'com.yourcompany.vibracode', // Replace with your bundle ID
+    bundleIdentifier: 'com.yourcompany.vibracode',
     supportsTablet: false,
   },
   android: {
-    package: 'com.yourcompany.vibracode', // Replace with your bundle ID
+    package: 'com.yourcompany.vibracode',
   },
   updates: {
     url: 'https://u.expo.dev/b733e6a0-be68-4bec-b0d0-9debc364dc7d',
@@ -15,7 +12,7 @@ const base = {
   runtimeVersion: '54.0.0',
 };
 
-const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
+const mapBuildProfileToConfig = {
   'versioned-client-add-sdk': {
     ...base,
     slug: 'vibra-code-versioned-add-sdk',
@@ -84,11 +81,7 @@ const mapBuildProfileToConfig: Record<string, ExpoConfig> = {
   },
 };
 
-const buildType = process.env.EAS_BUILD_PROFILE;
-assert(
-  buildType && mapBuildProfileToConfig[buildType],
-  'Set EAS_BUILD_PROFILE=release-client to run an eas-cli command in this directory against the release project.'
-);
+const buildType = process.env.EAS_BUILD_PROFILE || 'release-client';
+const config = mapBuildProfileToConfig[buildType] || mapBuildProfileToConfig['release-client'];
 
-const config = mapBuildProfileToConfig[buildType];
 export default config;
