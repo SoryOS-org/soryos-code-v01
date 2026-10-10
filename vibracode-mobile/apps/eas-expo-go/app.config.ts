@@ -1,28 +1,3 @@
-const diag = function (m) {
-  try {
-    process.stderr.write('[appconfigdiag] ' + m + '\n');
-  } catch (e) {}
-};
-diag('start EAS_BUILD_PROFILE=' + process.env.EAS_BUILD_PROFILE + ' cwd=' + process.cwd());
-const probeMods = [
-  '@expo/config',
-  '@expo/config-plugins',
-  '@expo/env',
-  '@expo/json-file',
-  'sucrase',
-  'require-from-string',
-  'expo',
-  '@expo/cli',
-];
-for (let i = 0; i < probeMods.length; i++) {
-  const mod = probeMods[i];
-  try {
-    diag('resolved ' + mod + ' -> ' + require.resolve(mod));
-  } catch (e) {
-    diag('FAILED resolve ' + mod + ': ' + (e && e.message));
-  }
-}
-
 const base = {
   ios: {
     bundleIdentifier: 'com.yourcompany.vibracode',
@@ -108,6 +83,5 @@ const mapBuildProfileToConfig = {
 
 const buildType = process.env.EAS_BUILD_PROFILE || 'release-client';
 const config = mapBuildProfileToConfig[buildType] || mapBuildProfileToConfig['release-client'];
-diag('done buildType=' + buildType);
 
 export default config;
