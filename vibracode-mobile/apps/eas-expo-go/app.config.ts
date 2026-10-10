@@ -1,10 +1,10 @@
-const diag = (m: string) => {
+const diag = function (m) {
   try {
     process.stderr.write('[appconfigdiag] ' + m + '\n');
   } catch (e) {}
 };
 diag('start EAS_BUILD_PROFILE=' + process.env.EAS_BUILD_PROFILE + ' cwd=' + process.cwd());
-for (const mod of [
+const probeMods = [
   '@expo/config',
   '@expo/config-plugins',
   '@expo/env',
@@ -13,10 +13,12 @@ for (const mod of [
   'require-from-string',
   'expo',
   '@expo/cli',
-]) {
+];
+for (let i = 0; i < probeMods.length; i++) {
+  const mod = probeMods[i];
   try {
     diag('resolved ' + mod + ' -> ' + require.resolve(mod));
-  } catch (e: any) {
+  } catch (e) {
     diag('FAILED resolve ' + mod + ': ' + (e && e.message));
   }
 }
