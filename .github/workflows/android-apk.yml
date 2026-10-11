@@ -1,0 +1,196 @@
+name: Android APK
+
+# Méthode de compilation SUPPLÉMENTAIRE et indépendante d'Expo EAS.
+# Ce workflow ne modifie, ne désactive ni ne remplace la configuration EAS existante.
+# Déclenchement manuel uniquement (voir le bloc `push` commenté plus bas).
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "Type de build"
+        required: true
+        default: "debug"
+        type: choice
+        options:
+          - debug
+          - release
+      architectures:
+        description: "ABIs à compiler (arm64-v8a recommandé pour les téléphones récents, ou 'all')"
+        required: true
+        default: "arm64-v8a"
+        type: string
+
+  # Décommenter pour lancer aussi automatiquement (attention : builds longs).
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - ".github/workflows/android-apk.yml"
+
+# Empêche deux builds APK simultanés, sans dépendre d'EAS.
+concurrency:
+  group: android-apk-${{ github.ref }}-${{ github.event.inputs.variant }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build ${{ github.event.inputs.variant }} APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    env:
+      # Ces variables reproduisent l'environnement utilisé par EAS pour l'Android.
+      EAS_BUILD_PLATFORM: android
+      EAS_BUILD_DISABLE_BUNDLE_JAVASCRIPT_STEP: "0"
+      EAS_DANGEROUS_OVERRIDE_ANDROID_APPLICATION_ID: host.exp.exponent
+      EXPO_ROOT_DIR: ${{ github.workspace }}/vibracode-mobile
+      SHARP_IGNORE_GLOBAL_LIBVIPS: "1"
+      # Ne PAS définir EAS_BUILD : évite l'upload Crashlytics (voir app/build.gradle).
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+      CI: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Free disk space
+        run: |
+          echo "Espace disque avant nettoyage :"
+          df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
+            /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/go /opt/hostedtoolcache/Ruby \
+            /usr/local/lib/android/sdk/ndk-bundle || true
+          echo "Espace disque après nettoyage :"
+          df -h /
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.17.1"
+          cache: "yarn"
+          cache-dependency-path: vibracode-mobile/yarn.lock
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK components
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;27.1.12297006" \
+            "cmake;3.30.5"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.1.12297006" >> "$GITHUB_ENV"
+
+      - name: Ensure Yarn 1 is available
+        run: |
+          yarn --version || npm install --global yarn@1.22.22
+          yarn --version
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            vibracode-mobile/apps/expo-go/android/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('vibracode-mobile/apps/expo-go/android/**/*.gradle', 'vibracode-mobile/apps/expo-go/android/**/*.gradle.kts', 'vibracode-mobile/apps/expo-go/android/gradle/wrapper/gradle-wrapper.properties', 'vibracode-mobile/react-native-lab/react-native/packages/react-native/gradle/libs.versions.toml') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # --- Pré-installation ---
+      # Réutilise le script EAS existant (installation React Native, build du codegen,
+      # copie des manifests, patches…) pour rester cohérent avec la méthode EAS.
+      # Le script attend quelques variables EAS_BUILD_* : on leur donne une valeur ici.
+      - name: Pre-install (React Native + codegen + manifests)
+        working-directory: vibracode-mobile
+        env:
+          EAS_BUILD_PROFILE: ${{ (github.event.inputs.variant == 'release' && 'publish-client') || 'versioned-client' }}
+        run: |
+          chmod +x apps/eas-expo-go/scripts/eas-build-pre-install.sh
+          bash apps/eas-expo-go/scripts/eas-build-pre-install.sh
+
+      - name: Install JS dependencies
+        working-directory: vibracode-mobile
+        run: yarn install --frozen-lockfile --network-timeout 900000
+
+      # --- Signature ---
+      # La clé privée reste dans les secrets GitHub, jamais dans le dépôt.
+      # Le build "debug" utilise le debug.keystore déjà présent (installation directe).
+      - name: Prepare release keystore
+        if: ${{ github.event.inputs.variant == 'release' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            echo "::error::Le build 'release' nécessite le secret ANDROID_KEYSTORE_BASE64 (ainsi que ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD)."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+
+      # --- Compilation de l'APK ---
+      - name: Build APK
+        id: build
+        working-directory: vibracode-mobile/apps/expo-go/android
+        env:
+          EAS_BUILD_PROFILE: ${{ (github.event.inputs.variant == 'release' && 'publish-client') || 'versioned-client' }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+
+          VARIANT="${{ github.event.inputs.variant }}"
+          if [ "$VARIANT" = "release" ]; then
+            TASK=":app:assembleMobileRelease"
+          else
+            TASK=":app:assembleMobileDebug"
+          fi
+
+          ARCH="${{ github.event.inputs.architectures }}"
+          if [ "$ARCH" != "all" ] && [ -n "$ARCH" ]; then
+            ARCH_ARG="-PreactNativeArchitectures=$ARCH"
+          else
+            ARCH_ARG=""
+          fi
+
+          echo "Compilation : $TASK $ARCH_ARG"
+          ./gradlew "$TASK" $ARCH_ARG --no-daemon --stacktrace --console=plain
+
+      - name: Locate and verify APK
+        id: apk
+        run: |
+          set -euo pipefail
+          APK_DIR="vibracode-mobile/apps/expo-go/android/app/build/outputs/apk/mobile/${{ github.event.inputs.variant }}"
+          APK_PATH="$(find "$APK_DIR" -maxdepth 1 -name '*.apk' | head -n 1)"
+          if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
+            echo "::error::Aucun APK trouvé dans $APK_DIR"
+            exit 1
+          fi
+          echo "APK trouvé : $APK_PATH"
+          ls -lh "$APK_PATH"
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vibra-code-${{ github.event.inputs.variant }}-apk
+          path: ${{ steps.apk.outputs.apk_path }}
+          if-no-files-found: error
+          retention-days: 30

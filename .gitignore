@@ -50,7 +50,6 @@ copilot/
 
 # Deployment / CI (remove for your own repo)
 .vercel/
-.github/
 .netlify/
 
 # Provisioning & signing (regenerate your own)

@@ -9,11 +9,12 @@ module.exports = {
         android: null,
       },
     },
-    // Exclude Stripe to avoid PassKit framework inclusion (App Store rejection)
+    // Exclude Stripe on iOS to avoid PassKit framework inclusion (App Store rejection).
+    // Android must stay enabled: expoview (versioned/host/exp/exponent/ExponentPackage.kt)
+    // imports com.reactnativestripesdk.StripeSdkPackage and autolinks it via autolinkLibrariesWithApp().
     '@stripe/stripe-react-native': {
       platforms: {
         ios: null,
-        android: null,
       },
     },
   },
